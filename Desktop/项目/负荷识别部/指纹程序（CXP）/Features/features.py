@@ -8,7 +8,7 @@ class Features:
     基础特征类，继承于FeaturesPar类，用于计算一段较长数据，对长数据进行分段从而得到一系列特征序列
     """
 
-    def __init__(self, sampling_frequency, eval_per=0.02, use_periods=1, is_fft=False,
+    def __init__(self, sampling_frequency, power_frequency=60, eval_per=0.02, use_periods=1, is_fft=False,
                  is_wavelet=False, wt_level=0, wt_name='db3'):
         """BaseFeatures类的初始化
 
@@ -21,10 +21,11 @@ class Features:
         :param wt_name: 小波名称，默认为db3，可修改
         """
         self.sampling_frequency = sampling_frequency
-        self.power_frequency = 50  # 电源频率
+        self.power_frequency = power_frequency  # 电源频率
         self.num_per_periods = int(self.sampling_frequency / self.power_frequency)
         self.is_fft = is_fft
         self.is_wavelet = is_wavelet
+        self.data_len = 0
         if self.is_wavelet:
             if wt_level == 0:
                 # 若要做小波变换，则需确定小波种类和分析的阶数，否则抛出错误
@@ -34,8 +35,8 @@ class Features:
                 self.wt_name = wt_name
         self.eval_per = eval_per
         self.use_periods = use_periods
-        self.__base_feature = BaseFeatures(is_fft, False, sampling_frequency, wt_level, wt_name)
-        self.__expert_feature = ExpertFeatures(is_fft, sampling_frequency)
+        self.__base_feature = BaseFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency)
+        self.__expert_feature = ExpertFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency)
 
     def __call__(self, data_i, data_u=None):
         """获取各种特征序列
@@ -56,6 +57,12 @@ class Features:
         self.__data_wt_whole = None  # 电流数据的小波分析
         # 整段数据切成数组，并通过BaseFeatures类依次append
         self.cut_data_i = self.__cut_data(data_i)  # 分段后的电流数据
+        self.data_len = len(self.cut_data_i)
+        # 若有输入电压则令basefeature的is_fft设为false，以免重复计算fft，反之设为true
+        if data_u is None:
+            self.__base_feature.is_fft = True
+        else:
+            self.__base_feature.is_fft = False
         for i in range(len(self.cut_data_i)):
             self.__base_feature(self.cut_data_i[i])
             self.__data_i_mean_list.append(self.__base_feature.data_mean)
@@ -103,6 +110,7 @@ class Features:
                     self.__u_i_fft_list["I_hp"].append(self.__expert_feature.u_i_fft["I_hp"])
                     self.__u_i_fft_list["Z_hm"].append(self.__expert_feature.u_i_fft["U_hm"])
                     self.__u_i_fft_list["Z_hp"].append(self.__expert_feature.u_i_fft["Z_hp"])
+                    self.__data_i_thd_list.append(self.__expert_feature.data_i_thd)
         return self
 
     def __cut_data(self, data):

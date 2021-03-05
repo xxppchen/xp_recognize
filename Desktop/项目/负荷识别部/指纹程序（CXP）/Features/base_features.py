@@ -7,7 +7,7 @@ class BaseFeatures:
     基础特征的父类，包含常见基础特征的计算方法，用于对整段数据进行单次计算
     """
 
-    def __init__(self, is_fft=False, is_wavelet=False, sampling_frequency=0, wt_level=0, wt_name='db3'):
+    def __init__(self, power_frequency=60, is_fft=False, is_wavelet=False, sampling_frequency=0, wt_level=0, wt_name='db3'):
         """FeaturesPar类的初始化
 
         :param is_fft: 是否进行傅里叶计算，True时结果在属性data_fft中
@@ -16,10 +16,10 @@ class BaseFeatures:
         :param wt_level: 小波变换层数，当要进行小波变换时需指定
         :param wt_name: 小波名称，默认为db3，可修改
         """
-        self.power_frequency = 50  # 电源频率
-        self.__is_fft = is_fft
+        self.power_frequency = power_frequency  # 电源频率
+        self.is_fft = is_fft
         self.__is_wavelet = is_wavelet
-        if self.__is_fft:
+        if self.is_fft:
             if sampling_frequency == 0:
                 # 若要做fft，则需确定采样频率的值，否则抛出错误
                 raise Exception('请确定采样频率（sampling_frequency）的值，以便进行FFT计算')
@@ -51,7 +51,7 @@ class BaseFeatures:
         self.__data_thd = None
         if self.__is_wavelet:
             self.__data_wt = self.get_wt_data(data, self.wt_name, self.wt_level)
-        if self.__is_fft:
+        if self.is_fft:
             self.__data_fft = {"freq": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[0],
                                "hm": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[1],
                                "hp": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[2]}

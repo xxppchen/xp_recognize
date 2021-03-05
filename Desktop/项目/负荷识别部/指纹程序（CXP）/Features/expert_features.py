@@ -7,13 +7,13 @@ class ExpertFeatures:
     专家特征类，用于计算电压电流组合特征
     """
 
-    def __init__(self, is_fft=False, sampling_frequency=0):
+    def __init__(self, power_frequency=60, is_fft=False, sampling_frequency=0):
         """ExpertFeatures类的初始化
 
         :param is_fft: 是否进行傅里叶计算，True时结果在属性data_fft中
         :param sampling_frequency: 采样频率，当要进行傅里叶变换即is_fft为True时需指定
         """
-        self.power_frequency = 50  # 电源频率
+        self.power_frequency = power_frequency  # 电源频率
         self.__is_fft = is_fft
         if self.__is_fft:
             if sampling_frequency == 0:
@@ -41,6 +41,7 @@ class ExpertFeatures:
         self.__u_i_fft = None
         if self.__is_fft:
             self.__u_i_fft = self.get_ui_harmonic(data_u, data_i, self.sampling_frequency, self.power_frequency)
+            self.__data_i_thd = np.mean(np.square((self.__u_i_fft["I_hm"])[2:])) / (self.__u_i_fft["I_hm"])[1]
         return self
 
     @staticmethod
@@ -122,10 +123,15 @@ class ExpertFeatures:
             "U_hp": u_hp,
             "I_hm": i_hm,
             "I_hp": i_hp,
-            "Z_hm": u_hm / i_hm,
+            "Z_hm": u_hm / (i_hm+0.00001),
             "Z_hp": u_hp - i_hp
         }
         return harmonic
+
+    @property
+    def data_i_thd(self):
+        """设置属性只读"""
+        return self.__data_i_thd
 
     @property
     def source_data_u(self):
