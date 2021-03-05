@@ -82,10 +82,10 @@ class MyDataset(Dataset):
     def __getitem__(self, index):
         # 获取该数据的标签编码
         app_item_id = int(self.csv_data["id"][index])
-        app_item = self.Metas[str(app_item_id + 1)]
+        app_item = self.Metas[str(app_item_id)]
         label_name = get_dic_value_by_k(app_item, self.label_type)
         label = self.encode_list[label_name]
-        item_data = self.csv_data.iloc[index, 1:]
+        item_data = np.array(self.csv_data.iloc[index, 1:])
         # 进行数据预处理在此处进行
         return item_data, label
 

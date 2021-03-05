@@ -6,6 +6,7 @@ import numpy as np
 
 power_frequency = 60
 sampling_frequency = 30000
+num_each_file = 20
 path = 'D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/'
 source_dir = 'submetered_new/'
 process_dir = path
@@ -19,12 +20,12 @@ for i, file in enumerate(csv_dir):
     soucre_data = pd.read_csv(os.path.join(path, source_dir, file),
                               names=["I", "U"])
     # 取数据中100个周波进行计算，若数据没有100周波，则取全部数据
-    if len(soucre_data['I']) < 100 * sampling_frequency / power_frequency:
+    if len(soucre_data['I']) < num_each_file * sampling_frequency / power_frequency:
         I_data = soucre_data['I']
         U_data = soucre_data['U']
     else:
-        I_data = soucre_data['I'][int(-100 * sampling_frequency / power_frequency):]
-        U_data = soucre_data['U'][int(-100 * sampling_frequency / power_frequency):]
+        I_data = soucre_data['I'][int(-num_each_file * sampling_frequency / power_frequency):]
+        U_data = soucre_data['U'][int(-num_each_file * sampling_frequency / power_frequency):]
     feature(I_data, U_data)
     data_len = feature.data_len
     id_list = data_len * [file[:-4]]
@@ -65,4 +66,4 @@ for i, file in enumerate(csv_dir):
     print('正在处理第{}个数据'.format(i+1))
     # type = load_dict[file[0:-4]]['appliance']['type']
     # dataframe.to_csv(process_dir + type + '_' + file, index=True, sep=',')
-all_data.to_csv(process_dir + 'all_submetered.csv', index=False, sep=',')
+all_data.to_csv(process_dir + 'all_submetered_20.csv', index=False, sep=',')
