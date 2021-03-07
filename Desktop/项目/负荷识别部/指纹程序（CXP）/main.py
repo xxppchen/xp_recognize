@@ -8,14 +8,14 @@ Dir = 'D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/'
 meta_path = Dir + 'metadata_submetered2.0.json'
 csv_path = Dir + 'all_submetered_20.csv'
 
-used_feas = ["i_mean", "i_thd", "P", "Q"]
+used_feas = ["i_thd", "P", "Q"]
 
-d = MyDataset(meta_path, csv_path, LabelType.Type, used_feas=used_feas)
+d = MyDataset(meta_path, csv_path, LabelType.Is_heat, used_feas=used_feas)
 data_loader = data.DataLoader(d, batch_size=512, shuffle=True)
 
-model = SingleLayerModel(len(used_feas), len(d.encode_list))
-# model = DoubleLayerModel(x_train.size()[1], 3, len(d.encode_list))
-# model = MultiLayerModer(x_train.size()[1], len(d.encode_list))
+# model = SingleLayerModel(len(used_feas), len(d.encode_list))
+# model = DoubleLayerModel(len(used_feas), 8, len(d.encode_list))
+model = MultiLayerModer(len(used_feas), len(d.encode_list))
 model = model.double()
 
 # 构建优化器
@@ -29,15 +29,14 @@ for epoch in range(1, epoch_num + 1):
     train_loss = 0
     train_acc = 0
     for i, (x_epoch, y_epoch) in enumerate(data_loader):
-
         # 训练集的前向
+        optim.zero_grad()
         train_y_p = model(x_epoch)
         train_loss = loss_f(train_y_p, y_epoch)
         train_acc = np.mean((torch.argmax(train_y_p, 1) == y_epoch).numpy())
         # # 验证集的前向
         # val_y_p = model(val_x)
         # val_loss = loss_fn(val_y_p, val_y)
-        optim.zero_grad()
         train_loss.backward()
         optim.step()
     if epoch % 1 == 0:

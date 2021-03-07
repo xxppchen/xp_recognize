@@ -71,13 +71,18 @@ class MyDataset(Dataset):
         self.label_type = label_type
         # 标签编号对应列表
         self.encode_list = get_label_list(self.Metas, label_type)
-        feas = pd.read_csv(csv_path, header=None, nrows=1).values
+        self.feas = pd.read_csv(csv_path, header=None, nrows=1).values
         if used_feas is None:
             self.csv_data = pd.read_csv(csv_path, sep=',')
         else:
             used_feas = list(used_feas)
             used_feas = ['id'] + used_feas
             self.csv_data = pd.read_csv(csv_path, sep=',', usecols=used_feas)
+        # 进行归一化处理
+        max_list = self.csv_data.max(axis=0)
+        min_list = self.csv_data.min(axis=0)
+        for i in range(1, self.csv_data.shape[1]):
+            self.csv_data.iloc[:, i] = (self.csv_data.iloc[:, i] - min_list[i]) / (max_list[i] - min_list[i])
 
     def __getitem__(self, index):
         # 获取该数据的标签编码

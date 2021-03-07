@@ -37,9 +37,9 @@ class DoubleLayerModel(nn.Module):
 class MultiLayerModer(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(MultiLayerModer, self).__init__()
-        self.forward_calc = nn.Sequential(nn.Linear(input_dim, 200), nn.ReLU(),
-                                          nn.Linear(200, 200), nn.ReLU(),
-                                          nn.Linear(200, output_dim))
+        self.forward_calc = nn.Sequential(nn.Linear(input_dim, 18), nn.ReLU(),
+                                          nn.Linear(18, 18), nn.ReLU(),
+                                          nn.Linear(18, output_dim))
 
     def forward(self, x):
         return self.forward_calc(x)
