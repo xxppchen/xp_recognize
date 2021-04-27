@@ -55,7 +55,7 @@ class BaseFeatures:
             self.__data_fft = {"freq": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[0],
                                "hm": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[1],
                                "hp": (self.fft_to_harmonic(data, self.sampling_frequency, self.power_frequency))[2]}
-            self.__data_thd = np.mean(np.square((self.__data_fft["hm"])[2:]))/(self.__data_fft["hm"])[1]
+            self.__data_thd = np.sqrt(np.sum(np.square((self.__data_fft["hm"][2:]))))/(self.__data_fft["hm"])[1]
         return self
 
     @property

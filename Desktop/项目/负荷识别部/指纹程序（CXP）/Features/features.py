@@ -13,6 +13,7 @@ class Features:
         """BaseFeatures类的初始化
 
         :param sampling_frequency: 采样频率，当要进行傅里叶变换即is_fft为True时需指定
+        :param power_frequency: 电源频率
         :param eval_per: 每多长时间进行一次计算，默认为每0.02s计算一次
         :param use_periods: 每次计算使用多少个周期，默认为1周期
         :param is_fft: 是否进行傅里叶计算，True时结果在属性data_fft中

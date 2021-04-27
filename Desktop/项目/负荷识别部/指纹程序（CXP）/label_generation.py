@@ -1,6 +1,6 @@
 """
 此文档用于修改json文件但不修改其格式，主要在meta字典中添加更多label信息
-运行此文档生成一新json文件
+运行此文档更新json文件
 要新添加一些简单规则的label可在此文档修改，但复杂的仍需手工打标签
 """
 import json
@@ -80,10 +80,6 @@ for i in range(1, len(meta_temp)+1):
     add_is_cool(meta_temp[i_s])
     add_is_rotate(meta_temp[i_s])
     add_is_light(meta_temp[i_s])
-    # 状态数（根据数据总结表定)
-    # 行为（夏季普遍还是冬季普遍还是无差）自己定
-    # 维度（稳态利用后一段数据平均值计算）1.功率（定个规则分箱）
-
 
 ###############################
 print("XXX")

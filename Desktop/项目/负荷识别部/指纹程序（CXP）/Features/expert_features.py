@@ -41,7 +41,7 @@ class ExpertFeatures:
         self.__u_i_fft = None
         if self.__is_fft:
             self.__u_i_fft = self.get_ui_harmonic(data_u, data_i, self.sampling_frequency, self.power_frequency)
-            self.__data_i_thd = np.mean(np.square((self.__u_i_fft["I_hm"])[2:])) / (self.__u_i_fft["I_hm"])[1]
+            self.__data_i_thd = np.sqrt(np.sum(np.square((self.__u_i_fft["I_hm"][2:]))))/(self.__u_i_fft["I_hm"])[1]
         return self
 
     @staticmethod
