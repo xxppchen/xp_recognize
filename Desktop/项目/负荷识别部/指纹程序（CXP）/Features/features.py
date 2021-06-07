@@ -49,10 +49,13 @@ class Features:
         data_i = np.array(data_i)
         self.__data_i = data_i  # 原始电流数据
         self.__data_i_mean_list = []  # 电流数据平均值列表
+        self.__data_i_max_list = []  # 电流数据最大值列表
         self.__data_i_pp_list = []  # 电流数据峰峰值列表
+        self.__data_i_pp_ratio_list = []  # 电流数据峰峰比值列表
         self.__data_i_rms_list = []  # 电流数据有效值列表
         self.__data_i_wave_factor_list = []  # 电流数据波形因数列表
         self.__data_i_pp_rms_list = []  # 电流数据峰均比列表
+        self.__data_low_hd_list = []  # 低频含量列表
         self.__data_i_thd_list = []
         self.__data_fft_list = {"hm": [], "hp": []}
         self.__data_wt_whole = None  # 电流数据的小波分析
@@ -67,10 +70,13 @@ class Features:
         for i in range(len(self.cut_data_i)):
             self.__base_feature(self.cut_data_i[i])
             self.__data_i_mean_list.append(self.__base_feature.data_mean)
+            self.__data_i_max_list.append(self.__base_feature.data_max)
             self.__data_i_pp_list.append(self.__base_feature.data_pp)
+            self.__data_i_pp_ratio_list.append(self.__base_feature.data_pp_ratio)
             self.__data_i_rms_list.append(self.__base_feature.data_rms)
             self.__data_i_wave_factor_list.append(self.__base_feature.data_wave_factor)
             self.__data_i_pp_rms_list.append(self.__base_feature.data_pp_rms)
+            self.__data_low_hd_list.append(self.__base_feature.data_low_hd)
             if self.is_fft and self.__base_feature.data_fft is not None and data_u is None:
                 self.__data_fft_list["hm"].append(self.__base_feature.data_fft["hm"])
                 self.__data_fft_list["hp"].append(self.__base_feature.data_fft["hp"])
@@ -139,9 +145,19 @@ class Features:
         return self.__data_i_mean_list
 
     @property
+    def data_i_max_list(self):
+        """设置属性只读"""
+        return self.__data_i_max_list
+
+    @property
     def data_i_pp_list(self):
         """设置属性只读"""
         return self.__data_i_pp_list
+
+    @property
+    def data_i_pp_ratio_list(self):
+        """设置属性只读"""
+        return self.__data_i_pp_ratio_list
 
     @property
     def data_i_rms_list(self):
@@ -157,6 +173,11 @@ class Features:
     def data_i_pp_rms_list(self):
         """设置属性只读"""
         return self.__data_i_pp_rms_list
+
+    @property
+    def data_low_hd_list(self):
+        """设置属性只读"""
+        return self.__data_low_hd_list
 
     @property
     def data_wt_whole(self):

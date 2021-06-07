@@ -42,10 +42,13 @@ class BaseFeatures:
         data = np.array(data)
         self.__data_source = data  # 原始数据
         self.__data_mean = self.get_mean(data)  # 数据平均值
+        self.__data_max = np.max(data)  # 数据最大值
         self.__data_pp = self.get_p_p_value(data)  # 数据峰峰值
+        self.__data_pp_ratio = np.max(data) / (-np.min(data))  # 数据峰峰比
         self.__data_rms = self.get_rms(data)  # 数据有效值
         self.__data_wave_factor = self.get_wave_factor(data)  # 计算波形因数
         self.__data_pp_rms = self.get_pp_rms(data)  # 计算峰均比
+        self.__data_low_hd = self.fft_low_harmonic(data, self.sampling_frequency, self.power_frequency)
         self.__data_fft = None
         self.__data_wt = None
         self.__data_thd = None
@@ -69,9 +72,19 @@ class BaseFeatures:
         return self.__data_mean
 
     @property
+    def data_max(self):
+        """设置属性只读"""
+        return self.__data_max
+
+    @property
     def data_pp(self):
         """设置属性只读"""
         return self.__data_pp
+
+    @property
+    def data_pp_ratio(self):
+        """设置属性只读"""
+        return self.__data_pp_ratio
 
     @property
     def data_rms(self):
@@ -87,6 +100,11 @@ class BaseFeatures:
     def data_pp_rms(self):
         """设置属性只读"""
         return self.__data_pp_rms
+
+    @property
+    def data_low_hd(self):
+        """设置属性只读"""
+        return self.__data_low_hd
 
     @property
     def data_wt(self):
@@ -173,6 +191,23 @@ class BaseFeatures:
             hp[0] -= 180
             hm[0] = -hm[0]
         return freq, hm, hp
+
+
+    @staticmethod
+    def fft_low_harmonic(data, sampling_frequency, power_frequency):
+        """傅里叶计算
+
+        :param data: 要进行傅里叶计算的数据
+        :param sampling_frequency: 数据的采样频率
+        :param power_frequency: 数据的电源频率
+        :return: 低次谐波含量
+        """
+        data = np.array(data)
+        index = int(np.size(data, 0) / sampling_frequency * power_frequency)
+        x = np.fft.fft(data, np.size(data, 0), axis=0) / np.size(data, 0) * 2
+        hm = np.abs(x) / np.sqrt(2)
+        lh = np.mean(hm[1:index])/hm[index]
+        return lh
 
     @staticmethod
     def get_wt_data(data, wt_name, wave_level):
