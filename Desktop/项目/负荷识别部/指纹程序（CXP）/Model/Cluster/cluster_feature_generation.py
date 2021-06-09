@@ -96,6 +96,7 @@ P_list = list(feature_data["P"])
 cut = pd.qcut(P_list, 5)
 P_bins = cut.codes
 input_data = pd.DataFrame({
+    "file_name": feature_data["file_name"],
     "P_bins": P_bins,
     "is_R": np.array(onehot_encoded1)[:, 0],
     "is_EL": np.array(onehot_encoded1)[:, 1],
@@ -106,6 +107,10 @@ input_data = pd.DataFrame({
     "is_H5": np.array(onehot_encoded2)[:, 2],
     "is_NS": np.array(onehot_encoded2)[:, 3],
     "is_E": np.array(onehot_encoded2)[:, 4],
+    "i_hm2/i_hm1": feature_data["i_hm2/i_hm1"],
+    "i_hm3/i_hm1": feature_data["i_hm3/i_hm1"],
+    "i_hm4/i_hm1": feature_data["i_hm4/i_hm1"],
+    "i_hm5/i_hm1": feature_data["i_hm5/i_hm1"],
     "Label": feature_data["load_type"]
 })
 input_data.to_csv("../Input_Data.csv", index=False, sep=',')

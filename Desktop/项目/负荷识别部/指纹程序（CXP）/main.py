@@ -19,7 +19,7 @@ model = MultiLayerModer(len(used_feas), len(d.encode_list))
 model = model.double()
 
 # 构建优化器
-optim = torch.optim.SGD(model.parameters(), lr=0.05)
+optim = torch.optim.SGD(model.parameters(), lr=0.01)
 # 损失类
 loss_f = nn.CrossEntropyLoss()
 epoch_num = 200

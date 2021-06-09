@@ -8,6 +8,7 @@
 '''
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 # 单层线性网络
@@ -43,3 +44,17 @@ class MultiLayerModer(nn.Module):
 
     def forward(self, x):
         return self.forward_calc(x)
+
+
+class MultiLayerModel(nn.Module):
+    def __init__(self, input_dim, output_dim):
+        super(MultiLayerModel, self).__init__()
+        self.linear1 = nn.Linear(input_dim, 18)
+        self.linear2 = nn.Linear(18, 24)
+        self.linear3 = nn.Linear(24, output_dim)
+
+    def forward(self, x):
+        x = F.relu(self.linear1(x))
+        x = F.relu(self.linear2(x))
+        x = self.linear3(x)
+        return F.log_softmax(x, dim=1)
