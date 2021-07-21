@@ -12,7 +12,8 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-power_frequency = 50
+power_frequency1 = 50
+power_frequency2 = 60
 sampling_frequency = 44100
 data_len_per_file = 1  # 每个文件所取的数据量
 
@@ -26,11 +27,16 @@ MK = {
     "MK3": [988.926, 60.9562]
 }
 
-feature = Features(sampling_frequency=sampling_frequency,
-                   power_frequency=power_frequency,
-                   is_fft=True,
-                   use_periods=10,
-                   eval_per=5 / 50)
+feature1 = Features(sampling_frequency=sampling_frequency,
+                    power_frequency=power_frequency1,
+                    is_fft=True,
+                    use_periods=10,
+                    eval_per=5 / 50)
+feature2 = Features(sampling_frequency=sampling_frequency,
+                    power_frequency=power_frequency2,
+                    is_fft=True,
+                    use_periods=10,
+                    eval_per=5 / 60)
 All_Data = pd.DataFrame()
 for i, file in enumerate(csv_dir):
     Data_factor = MK[file.split("_")[3]]
@@ -42,22 +48,27 @@ for i, file in enumerate(csv_dir):
     # plt.plot(source_data.iloc[:8820, 0])
     # plt.plot(source_data.iloc[:8820, 1])
     # plt.show()
-    feature(source_data['I'], source_data['U'])
+    if file.split("_")[2] == "r8":
+        feature2(source_data['I'], source_data['U'])
+        feature = feature2
+    else:
+        feature1(source_data['I'], source_data['U'])
+        feature = feature1
     dataframe = pd.concat(
         [
             pd.DataFrame({'load_type': data_len_per_file * [file.split("_")[0]]}),
             pd.DataFrame({'brand': data_len_per_file * [file.split("_")[1]]}),
             pd.DataFrame({'file_number': data_len_per_file * [str(i+1)]}),
             pd.DataFrame({'file_name': data_len_per_file * [file[0:-4]]}),
-            pd.DataFrame({'i_max': feature.data_i_max_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'i_pp': feature.data_i_pp_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'P': feature.P_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'i_pp_ratio': feature.data_i_pp_ratio_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'i_pp_rms': feature.data_i_pp_rms_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'i_wave_factor': feature.data_i_wave_factor_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'P_F': feature.P_F_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'i_thd': feature.data_i_thd_list[-data_len_per_file-3:-3]}),
-            pd.DataFrame({'low_hd': feature.data_low_hd_list[-data_len_per_file-3:-3]}),
+            pd.DataFrame({'i_max': feature.data_i_max_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'i_pp': feature.data_i_pp_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'P': feature.P_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'i_pp_ratio': feature.data_i_pp_ratio_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'i_pp_rms': feature.data_i_pp_rms_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'i_wave_factor': feature.data_i_wave_factor_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'P_F': feature.P_F_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'i_thd': feature.data_i_thd_list[-data_len_per_file - 3:-3]}),
+            pd.DataFrame({'low_hd': feature.data_low_hd_list[-data_len_per_file - 3:-3]}),
         ],
         axis=1)
 

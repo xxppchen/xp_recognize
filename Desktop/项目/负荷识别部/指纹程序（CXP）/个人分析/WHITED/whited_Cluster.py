@@ -1,253 +1,123 @@
-import pandas as pd
-from sklearn.cluster import KMeans
 import numpy as np
-import matplotlib.pyplot as plt
-import json
+import pandas as pd
 from sklearn.externals import joblib
+import random
+import matplotlib.pyplot as plt
 
-feature_data = pd.read_csv('D:/Desktop/项目/负荷识别部/dataset/____WHITED/WHITEDv1.1/Feature_Data_0719(-3).csv')
+random.seed(12)
 
-# 标准化处理
-# # 多类使用的特征
-# X = np.array(feature_data.iloc[:, 5:])
-# 两类使用的特征
-feature_data = feature_data[feature_data["P"] >= 3]  # 进行功率阈值过滤
-X = np.array(feature_data[["i_thd", "i_hp1", "low_hd"]])
-X[:, 1] = np.cos(X[:, 1] / 180 * np.pi)
-X = (X - np.mean(X, axis=0)) / np.std(X, axis=0)
-
-"""
-聚类分析
-"""
 # 聚类模型读取
-model1 = joblib.load('D:/Desktop/项目/负荷识别部/指纹程序（CXP）/Model/cluster_model1.pkl')
-yhat = model1.predict(X)
-feature_data["yhat"] = yhat
-clusters = np.unique(yhat)
+model1 = joblib.load('../../Model/cluster_model1.pkl')
+model2 = joblib.load('../../Model/cluster_model2.pkl')
+model3 = joblib.load('../../Model/cluster_model3.pkl')
+model4 = joblib.load('../../Model/cluster_model4.pkl')
+# 原始数据读取，后续新增标签数据，
+feature_data = pd.read_csv('D:/Desktop/项目/负荷识别部/dataset/____WHITED/WHITEDv1.1/Feature_Data_0719(-3).csv')
+feature_data.sort_values("file_name", inplace=True)
+feature_data = feature_data[feature_data["P"] >= 3]
+
+
+def my_point(a, b):
+    return a, b
+
+
+def my_point2(a, b, c, d):
+    return a, b, c, d
+
+
+unique_brand = dict(feature_data.groupby("load_type")["brand"].unique())
+
+"""
+聚类1---Low_hd--稳定型/时变型
+"""
+# 聚类1标签生成
+X1 = np.array(feature_data["low_hd"]).reshape(-1, 1)
+yhat1 = model1.predict(X1)
+feature_data["cluster1"] = yhat1
+
+"""
+聚类2---i_hp1--对齐型/偏移型
+"""
+# 聚类2标签生成
+X2 = np.array(feature_data["i_hp1"]).reshape(-1, 1)
+X2 = np.cos(X2 / 180 * np.pi)
+yhat2 = model2.predict(X2)
+feature_data["cluster2"] = yhat2
+
+"""
+聚类3---偶次谐波含量--是否对称
+"""
+X3_ = np.array(feature_data[["i_hm2/i_hm1", "i_hm4/i_hm1", "i_hm6/i_hm1"]])
+X3 = np.sqrt(np.sum(np.square(X3_), axis=1)).reshape(-1, 1)
+yhat3 = model3.predict(X3)
+feature_data["cluster3"] = yhat3
+
+"""
+聚类4---奇次谐波含量--是否较多波形毛刺
+"""
+X4_ = np.array(feature_data[["i_hm3/i_hm1", "i_hm5/i_hm1", "i_hm7/i_hm1"]])
+X4 = np.sqrt(np.sum(np.square(X4_), axis=1)).reshape(-1, 1)
+yhat4 = model4.predict(X4)
+feature_data["cluster4"] = yhat4
+
+
+"""
+聚类结果画图
+"""
+clusters = np.unique(yhat4)
 cluster_file = {}
-cluster_type = {}
-cluster_type_unique = {}
+cluster_nums = {}
 fig1, ax1 = plt.subplots()
 for cluster in clusters:
-    row_ix = np.where(yhat == cluster)
-    plt.scatter(X[row_ix, 0], X[row_ix, 1], label=cluster)
-    cluster_file['cluster_{}'.format(cluster)] = np.unique(np.array(feature_data)[row_ix, 1])
-    cluster_type_unique['cluster_{}'.format(cluster)] = np.unique(np.array(feature_data)[row_ix, 0])
+    row_ix = np.where(yhat4 == cluster)
+    plt.scatter(X4[row_ix, 0], (X4[row_ix, 0]).shape[1]*[0], label=cluster)
+    cluster_file['cluster_{}'.format(cluster)] = np.unique(np.array(feature_data)[row_ix, 3])
+    cluster_nums['cluster_{}'.format(cluster)] = np.unique(np.array(feature_data)[row_ix, 2])
 plt.legend()
 plt.show()
-# model__1 = joblib.load('./cluster_model1.pkl')
 
-print("XXX")
+for cluster_name, file_names in cluster_file.items():
+    i = 0
+    if cluster_name == "cluster_0":
+        continue
+    for file_name in file_names:
+        MK = {
+            "MK1": [1033.64, 61.4835],
+            "MK2": [861.15, 60.200],
+            "MK3": [988.926, 60.9562]
+        }
+        Data_factor = MK[file_name.split("_")[3]]
+        path = 'D:/Desktop/项目/负荷识别部/dataset/____WHITED/WHITEDv1.1/'
+        source_dir = 'CSVData/'
+        data = pd.read_csv(path + source_dir + file_name + '.csv',
+                           header=0,
+                           names=["U", "I"])
+        data.iloc[:, 0] = data.iloc[:, 0] * Data_factor[0]
+        data.iloc[:, 1] = data.iloc[:, 1] * Data_factor[1]
+        data = data.iloc[-30 * 882:-20 * 882, :]
 
-# # from sklearn.cluster import MeanShift
-# # model2 = MeanShift()
-# # yhat2 = model2.fit_predict(X)
-# # clusters2 = np.unique(yhat2)
-# # cluster_file2 = {}
-# # fig2, ax2 = plt.subplots()
-# # for cluster2 in clusters2:
-# #     row_ix2 = np.where(yhat2 == cluster2)
-# #     plt.scatter(X[row_ix2, 2], X[row_ix2, 1])
-# #     cluster_file2['cluster_{}'.format(cluster2)] = np.unique(np.array(feature_data)[row_ix2, 1])
-# # plt.show()
-#
-# # print("XXX")
-#
-# """
-# 聚类结果画图
-# """
-# # for cluster_name, cluster_nums in cluster_file.items():
-# #     i = 0
-# #     for num in cluster_nums:
-# #         data = pd.read_csv('D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/submetered_new/' + str(num) + '.csv',
-# #                            names=["I", "U"])
-# #         data = data.iloc[-30 * 500:-20 * 500, :]
-# #         # ########## 作图 ##########
-# #         fig, ax1 = plt.subplots(figsize=(10, 6))
-# #         ax2 = ax1.twinx()
-# #         plt.title(u'Voltage,Current-Time---' + str(file2type[num - 1]))
-# #         T = np.arange(0, 0.16666, 0.16666 / 5000)
-# #         line2, = ax1.plot(data["U"], 'b')
-# #         line3, = ax2.plot(data["I"], 'r', linewidth=2)
-# #         plt.ylim(ymin=-np.max(data["I"]) * 2, ymax=np.max(data["I"]) * 2)
-# #         plt.legend([line3, line2], ['Current[A]', 'Voltage[V]'], loc='upper right')
-# #         ax1.set_xlabel(u'Time[s]')
-# #         ax1.set_ylabel(u'Voltage[V]')
-# #         ax2.set_ylabel(u'Current[A]')
-# #         # 分两类
-# #         plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result1\\" + str(cluster_name) + "\\" + str(num) + "_" + str(
-# #             file2type[num - 1]) + ".jpg")
-# #         # # 分多类
-# #         # plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result2\\" + str(cluster_name) + "\\" + str(num) + "_" + str(
-# #         #     file2type[num - 1]) + ".jpg")
-# #         plt.close()
-# #         i += 1
-# #         print("正在处理" + cluster_name + "类中的第" + str(i) + "条数据...")
-#
-#
-# """
-# 二次聚类1
-# """
-# cluster_data = feature_data[feature_data["yhat"] == 0]
-# cluster_data.sort_values("file_name", inplace=True)
-# X2 = np.array(cluster_data[["i_hm2/i_hm1", "i_hm4/i_hm1", "i_pp_rms", "i_thd", "i_hm3/i_hm1", "i_hm5/i_hm1"]])
-# X2 = (X2 - np.mean(X2, axis=0)) / np.std(X2, axis=0)
-# model2 = KMeans(n_clusters=4, random_state=9)
-# model2.fit(X2)
-# yhat2 = model2.predict(X2)
-# cluster_data["yhat2"] = yhat2
-# clusters2 = np.unique(yhat2)
-# cluster_file2 = {}
-# cluster_type2 = {}
-# cluster_type_unique2 = {}
-# fig3, ax3 = plt.subplots()
-# for cluster in clusters2:
-#     row_ix = np.where(yhat2 == cluster)
-#     plt.scatter(X2[row_ix, 0], X2[row_ix, 4], label=cluster)
-#     cluster_file2['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data)[row_ix, 1])
-#     cluster_type2['cluster_{}'.format(cluster)] = np.array(file2type)[
-#         np.unique(np.array(cluster_data)[row_ix, 1]).astype(int) - 1]
-#     cluster_type_unique2['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data)[row_ix, 0])
-# plt.legend()
-# plt.show()
-# joblib.dump(model2, './cluster_model2_1.pkl')
-#
-# # for cluster_name, cluster_nums in cluster_file2.items():
-# #     i = 0
-# #     for num in cluster_nums:
-# #         data = pd.read_csv('D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/submetered_new/' + str(num) + '.csv',
-# #                            names=["I", "U"])
-# #         data = data.iloc[-30 * 500:-20 * 500, :]
-# #         # ########## 作图 ##########
-# #         fig, ax1 = plt.subplots(figsize=(10, 6))
-# #         ax2 = ax1.twinx()
-# #         plt.title(u'Voltage,Current-Time---' + str(file2type[num - 1]))
-# #         T = np.arange(0, 0.16666, 0.16666 / 5000)
-# #         line2, = ax1.plot(T, data["U"], 'b')
-# #         line3, = ax2.plot(T, data["I"], 'r', linewidth=2)
-# #         plt.ylim(ymin=-np.max(data["I"]) * 2, ymax=np.max(data["I"]) * 2)
-# #         plt.legend([line3, line2], ['Current[A]', 'Voltage[V]'], loc='upper right')
-# #         ax1.set_xlabel(u'Time[s]')
-# #         ax1.set_ylabel(u'Voltage[V]')
-# #         ax2.set_ylabel(u'Current[A]')
-# #         # 分多类
-# #         plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result1\cluster_0\\" + str(cluster_name) + "\\" + str(
-# #             num) + "_" + str(
-# #             file2type[num - 1]) + ".jpg")
-# #         plt.close()
-# #         i += 1
-# #         print("正在处理" + cluster_name + "类中的第" + str(i) + "条数据...")
-#
-# """
-# 二次聚类3
-# """
-# cluster_data3 = feature_data[feature_data["yhat"] == 2]
-# cluster_data3.sort_values("file_name", inplace=True)
-# X3 = np.array(cluster_data3[["i_thd", "i_hm3/i_hm1", "i_hm5/i_hm1"]])
-# X3 = (X3 - np.mean(X3, axis=0)) / np.std(X3, axis=0)
-# model3 = KMeans(n_clusters=3, random_state=9)
-# model3.fit(X3)
-# yhat3 = model3.predict(X3)
-# cluster_data3["yhat2"] = yhat3
-# clusters3 = np.unique(yhat3)
-# cluster_file3 = {}
-# cluster_type3 = {}
-# cluster_type_unique3 = {}
-# fig3, ax3 = plt.subplots()
-# for cluster in clusters3:
-#     row_ix = np.where(yhat3 == cluster)
-#     plt.scatter(X3[row_ix, 0], X3[row_ix, 1], label=cluster)
-#     cluster_file3['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data3)[row_ix, 1])
-#     cluster_type3['cluster_{}'.format(cluster)] = np.array(file2type)[
-#         np.unique(np.array(cluster_data3)[row_ix, 1]).astype(int) - 1]
-#     cluster_type_unique3['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data3)[row_ix, 0])
-# plt.legend()
-# plt.show()
-# joblib.dump(model3, './cluster_model2_3.pkl')
-#
-# # for cluster_name, cluster_nums in cluster_file3.items():
-# #     i = 0
-# #     for num in cluster_nums:
-# #         data = pd.read_csv('D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/submetered_new/' + str(num) + '.csv',
-# #                            names=["I", "U"])
-# #         data = data.iloc[-30 * 500:-20 * 500, :]
-# #         # ########## 作图 ##########
-# #         fig, ax1 = plt.subplots(figsize=(10, 6))
-# #         ax2 = ax1.twinx()
-# #         plt.title(u'Voltage,Current-Time---' + str(file2type[num - 1]))
-# #         T = np.arange(0, 0.16666, 0.16666 / 5000)
-# #         line2, = ax1.plot(data["U"], 'b')
-# #         line3, = ax2.plot(data["I"], 'r', linewidth=2)
-# #         plt.ylim(ymin=-np.max(data["I"]) * 2, ymax=np.max(data["I"]) * 2)
-# #         plt.legend([line3, line2], ['Current[A]', 'Voltage[V]'], loc='upper right')
-# #         ax1.set_xlabel(u'Time[s]')
-# #         ax1.set_ylabel(u'Voltage[V]')
-# #         ax2.set_ylabel(u'Current[A]')
-# #         # 分多类
-# #         plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result1\cluster_2\\" + str(cluster_name) + "\\" + str(
-# #             num) + "_" + str(
-# #             file2type[num - 1]) + ".jpg")
-# #         plt.close()
-# #         i += 1
-# #         print("正在处理" + cluster_name + "类中的第" + str(i) + "条数据...")
-# print("XXX")
-#
-#
-#
-# """
-# 二次聚类4
-# """
-# cluster_data4 = feature_data[feature_data["yhat"] == 3]
-# cluster_data4.sort_values("file_name", inplace=True)
-# X4 = np.array(cluster_data4[["i_thd", "i_hm3/i_hm1", "i_hm5/i_hm1"]])
-# # X4 = np.array(cluster_data4[["i_thd", "i_hm3/i_hm1", "i_hm5/i_hm1", "i_hp3", "i_hp5", "i_hp1"]])
-# # X4[:, -3] = np.cos((X4[:, -3]-X4[:, -1])/180*np.pi)
-# # X4[:, -2] = np.cos((X4[:, -2]-X4[:, -1])/180*np.pi)
-# # X4 = X4[:, :-1]
-# X4 = (X4 - np.mean(X4, axis=0)) / np.std(X4, axis=0)
-# model4 = KMeans(n_clusters=3, random_state=9)
-# model4.fit(X4)
-# yhat4 = model4.predict(X4)
-# cluster_data4["yhat2"] = yhat4
-# clusters4 = np.unique(yhat4)
-# cluster_file4 = {}
-# cluster_type4 = {}
-# cluster_type_unique4 = {}
-# fig4, ax4 = plt.subplots()
-# for cluster in clusters4:
-#     row_ix = np.where(yhat4 == cluster)
-#     plt.scatter(X4[row_ix, 0], X4[row_ix, 1], label=cluster)
-#     cluster_file4['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data4)[row_ix, 1])
-#     cluster_type4['cluster_{}'.format(cluster)] = np.array(file2type)[
-#         np.unique(np.array(cluster_data4)[row_ix, 1]).astype(int) - 1]
-#     cluster_type_unique4['cluster_{}'.format(cluster)] = np.unique(np.array(cluster_data4)[row_ix, 0])
-# plt.legend()
-# plt.show()
-# joblib.dump(model4, './cluster_model2_4.pkl')
-#
-# # for cluster_name, cluster_nums in cluster_file4.items():
-# #     i = 0
-# #     for num in cluster_nums:
-# #         data = pd.read_csv('D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/submetered_new/' + str(num) + '.csv',
-# #                            names=["I", "U"])
-# #         data = data.iloc[-30 * 500:-20 * 500, :]
-# #         # ########## 作图 ##########
-# #         fig, ax1 = plt.subplots(figsize=(10, 6))
-# #         ax2 = ax1.twinx()
-# #         plt.title(u'Voltage,Current-Time---' + str(file2type[num - 1]))
-# #         T = np.arange(0, 0.16666, 0.16666 / 5000)
-# #         line2, = ax1.plot(data["U"], 'b')
-# #         line3, = ax2.plot(data["I"], 'r', linewidth=2)
-# #         plt.ylim(ymin=-np.max(data["I"]) * 2, ymax=np.max(data["I"]) * 2)
-# #         plt.legend([line3, line2], ['Current[A]', 'Voltage[V]'], loc='upper right')
-# #         ax1.set_xlabel(u'Time[s]')
-# #         ax1.set_ylabel(u'Voltage[V]')
-# #         ax2.set_ylabel(u'Current[A]')
-# #         # 分多类
-# #         plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result1\cluster_3\\" + str(cluster_name) + "\\" + str(
-# #             num) + "_" + str(
-# #             file2type[num - 1]) + ".jpg")
-# #         plt.close()
-# #         i += 1
-# #         print("正在处理" + cluster_name + "类中的第" + str(i) + "条数据...")
+        # if file_name == "SolderingIron_80W_r1_MK2_20151012113036":
+        #     data_temp = np.array(data["I"])
+        #     index = 10
+        #     x = np.fft.fft(data_temp, np.size(data_temp, 0), axis=0) / np.size(data_temp, 0) * 2
+        #     hm = np.abs(x) / np.sqrt(2)
+        #     lh = np.mean(hm[1:index]) / hm[index]
+
+
+        # ########## 作图 ##########
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+        ax2 = ax1.twinx()
+        T = np.arange(0, 0.2, 0.2 / 8820)
+        line2, = ax1.plot(data["U"], 'b')
+        line3, = ax2.plot(data["I"], 'r', linewidth=2)
+        plt.ylim(ymin=-np.max(data["I"]) * 2, ymax=np.max(data["I"]) * 2)
+        plt.legend([line3, line2], ['Current[A]', 'Voltage[V]'], loc='upper right')
+        ax1.set_xlabel(u'Time[s]')
+        ax1.set_ylabel(u'Voltage[V]')
+        ax2.set_ylabel(u'Current[A]')
+        # 分两类
+        plt.savefig("D:\Desktop\项目\负荷识别部\指纹程序（CXP）\Cluster_Result_Whited\cluster4\\" + str(cluster_name) + "\\" + str(file_name) + ".jpg")
+        plt.close()
+        i += 1
+        print("正在处理" + cluster_name + "类中的第" + str(i) + "条数据...")
 print("XXX")

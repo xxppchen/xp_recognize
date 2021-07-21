@@ -9,9 +9,15 @@ from sklearn.preprocessing import LabelBinarizer
 from plot.CM_Polt import *
 
 torch.manual_seed(7)
+"""
+聚类1 Low_hd  -- 0:稳定型    1:时变型
+聚类2 i_hp1   -- 0:对齐型    1:偏移型
+聚类3 偶含量   -- 0:对称型    1:不对称型
+聚类4 奇含量   -- 0:少毛刺型   1:电子型     2:多毛刺型
+"""
 # 准备数据
 source_data1 = pd.DataFrame()
-source_data1 = pd.read_csv("../../Model/Input_Data.csv")
+source_data1 = pd.read_csv("../../Model/Input_Data_PLAID_0720.csv", encoding="utf-8")
 source_data1.loc[source_data1["Label"] == "Air Conditioner", "Label"] = "AC"
 source_data1.loc[source_data1["Label"] == "Coffee maker", "Label"] = "CoffeeMachine"
 source_data1.loc[source_data1["Label"] == "Hairdryer", "Label"] = "HairDryer"
@@ -24,11 +30,11 @@ source_data = pd.concat([source_data1, source_data2], axis=0)
 X = source_data.loc[:, [
                            "P_bins",
                            # "P",
-                           # "cluster1", "cluster2",
-                           "is_R", "is_EL", "is_LHD", "is_X", "is_H1", "is_H3", "is_H5", "is_NS", "is_H5",
+                           "cluster1", "cluster2", "cluster3", "cluster4",
+                           "i_hm2/i_hm1", "i_hm3/i_hm1", "i_hm4/i_hm1", "i_hm5/i_hm1",
+                           "hf_2_1", "hf_3_1", "hf_4_1", "hf_5_1",
                            # "i_thd",
                            # "P_F",
-                           "i_hm2/i_hm1", "i_hm3/i_hm1", "i_hm4/i_hm1", "i_hm5/i_hm1"
                        ]]
 
 Y = source_data["Label"]
