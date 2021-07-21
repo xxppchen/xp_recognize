@@ -35,9 +35,13 @@ for i, file in enumerate(csv_dir):
                               names=["I", "U"])
     feature(source_data['I'], source_data['U'])
     load_type = meta[file[0:-4]]["appliance"]["type"]
+    brand = meta[file[0:-4]]["appliance"]["brand"]
+    model_number = meta[file[0:-4]]["appliance"]["model_number"]
     dataframe = pd.concat(
         [
             pd.DataFrame({'load_type': data_len_per_file * [load_type]}),
+            pd.DataFrame({'brand': data_len_per_file * [brand]}),
+            pd.DataFrame({'model_number': data_len_per_file * [model_number]}),
             pd.DataFrame({'file_name': data_len_per_file * [file[0:-4]]}),
             pd.DataFrame({'i_max': feature.data_i_max_list[-data_len_per_file-3:-3]}),
             pd.DataFrame({'i_pp': feature.data_i_pp_list[-data_len_per_file-3:-3]}),

@@ -36,8 +36,8 @@ class Features:
                 self.wt_name = wt_name
         self.eval_per = eval_per
         self.use_periods = use_periods
-        self.__base_feature = BaseFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency)
-        self.__expert_feature = ExpertFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency)
+        self.__base_feature = BaseFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency, power_frequency=self.power_frequency)
+        self.__expert_feature = ExpertFeatures(is_fft=is_fft, sampling_frequency=sampling_frequency, power_frequency=self.power_frequency)
 
     def __call__(self, data_i, data_u=None):
         """获取各种特征序列

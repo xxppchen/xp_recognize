@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 from sklearn.externals import joblib
+import random
+
+random.seed(12)
 
 # 聚类模型读取
 model1 = joblib.load('../cluster_model1.pkl')
@@ -11,6 +14,16 @@ model2_4 = joblib.load('../cluster_model2_4.pkl')
 feature_data = pd.read_csv(r'D:/Desktop/项目/负荷识别部/Plaid/PLAID 2018/submetered/Feature_Data_0603(-3).csv')
 feature_data.sort_values("file_name", inplace=True)
 feature_data = feature_data[feature_data["P"] >= 3]
+
+
+def my_point(a, b):
+    return a, b
+
+
+feature_data['(brand，model_number)'] = feature_data.apply(lambda row: str(my_point(row['brand'], row['model_number'])),
+                       axis=1)
+unique_brand = dict(feature_data.groupby("load_type")["(brand，model_number)"].unique())
+
 """
 第一层聚类
 0————有功主导（R）
@@ -56,7 +69,7 @@ cluster_data1["yhat"] = yhat2
 cluster_data1["cluster2"] = cluster_data1.apply(lambda x: get_type(x["yhat"], ["H3", "H5", "NS", "H1"]), axis=1)
 # 类别2
 cluster_data2 = feature_data[feature_data["cluster1"] == 1]
-cluster_data2["cluster2"] = cluster_data2.shape[0]*[0]
+cluster_data2["cluster2"] = cluster_data2.shape[0] * [0]
 # 类别3
 cluster_data3 = feature_data[feature_data["cluster1"] == 2]
 X2_3 = np.array(cluster_data3[["i_thd", "i_hm3/i_hm1", "i_hm5/i_hm1"]])
@@ -72,8 +85,19 @@ yhat4 = model2_4.predict(X2_4)
 cluster_data4["yhat"] = yhat4
 cluster_data4["cluster2"] = cluster_data4.apply(lambda x: get_type(x["yhat"], ["H3", "E", "H5"]), axis=1)
 # 聚类2总标签
-cluster2_result = pd.concat([cluster_data1["cluster2"], cluster_data2["cluster2"], cluster_data3["cluster2"], cluster_data4["cluster2"]], axis=0)
+cluster2_result = pd.concat(
+    [cluster_data1["cluster2"], cluster_data2["cluster2"], cluster_data3["cluster2"], cluster_data4["cluster2"]],
+    axis=0)
 feature_data["cluster2"] = cluster2_result
+
+feature_data['(cluster1，cluster2)'] = feature_data.apply(lambda row: str(my_point(row['cluster1'], row['cluster2']))
+                                                         , axis=1)
+data_temp = pd.DataFrame({
+    "load_type": feature_data["load_type"],
+    "(cluster1，cluster2)": feature_data['(cluster1，cluster2)']
+})
+unique_cluster = data_temp.groupby("load_type")["(cluster1，cluster2)"].unique()
+
 """
 转为onehot编码
 """
@@ -86,7 +110,7 @@ onehot_encoded2 = list()
 for value in feature_data["cluster2"]:
     letter = [0 for _ in range(5)]
     if value != 0:
-        letter[value-1] = 1
+        letter[value - 1] = 1
     onehot_encoded2.append(letter)
 
 """
@@ -95,9 +119,22 @@ for value in feature_data["cluster2"]:
 P_list = list(feature_data["P"])
 cut = pd.qcut(P_list, 5)
 P_bins = cut.codes
+
+"""
+提取出某些型号
+"""
+feature_data["Is_test"] = 0
+for brand in unique_brand:
+    if len(unique_brand[brand]) > 1:
+        a = len(unique_brand[brand])
+        feature_data.loc[feature_data["(brand，model_number)"] == unique_brand[brand][random.randrange(2, a)], "Is_test"] = 1
+
 input_data = pd.DataFrame({
     "file_name": feature_data["file_name"],
     "P_bins": P_bins,
+    "P": feature_data["P"],
+    "cluster1": feature_data["cluster1"],
+    "cluster2": feature_data["cluster2"],
     "is_R": np.array(onehot_encoded1)[:, 0],
     "is_EL": np.array(onehot_encoded1)[:, 1],
     "is_LHD": np.array(onehot_encoded1)[:, 2],
@@ -111,7 +148,10 @@ input_data = pd.DataFrame({
     "i_hm3/i_hm1": feature_data["i_hm3/i_hm1"],
     "i_hm4/i_hm1": feature_data["i_hm4/i_hm1"],
     "i_hm5/i_hm1": feature_data["i_hm5/i_hm1"],
-    "Label": feature_data["load_type"]
+    "i_thd": feature_data["i_thd"],
+    "P_F": feature_data["P_F"],
+    "Label": feature_data["load_type"],
+    "Is_test": feature_data["Is_test"]
 })
 input_data.to_csv("../Input_Data.csv", index=False, sep=',')
 print("XXX")

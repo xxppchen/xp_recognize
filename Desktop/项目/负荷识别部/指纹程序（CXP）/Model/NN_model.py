@@ -12,7 +12,13 @@ torch.manual_seed(7)
 source_data = pd.read_csv("Input_Data.csv")
 # source_data2 = source_data.copy(deep=True)
 # source_data2.sort_values("Label", inplace=True)
-X = torch.tensor(np.array(source_data.iloc[:, 1:-1]).astype(np.float32))
+X = torch.tensor(np.array(source_data.loc[:, [
+                                                 # "P_bins",
+                                                  "P",
+                                                  # "cluster1", "cluster2",
+                                                  "is_R", "is_EL", "is_LHD", "is_X", "is_H1", "is_H3", "is_H5", "is_NS", "is_H5",
+                                                  "i_hm2/i_hm1", "i_hm3/i_hm1", "i_hm4/i_hm1", "i_hm5/i_hm1"
+                                             ]]).astype(np.float32))
 Y = source_data.iloc[:, -1]
 le = preprocessing.LabelEncoder()
 le.fit_transform(Y)
@@ -22,8 +28,8 @@ n_sample = X.shape[0]
 n_val = int(0.2 * n_sample)
 n_test = int(0.1 * n_sample)
 shuffled_indices = torch.randperm(n_sample)  # 获取随机正整数
-train_indices = shuffled_indices[: -n_val-n_test]  # 训练集的索引
-val_indices = shuffled_indices[-n_val-n_test:-n_test]  # 验证集的索引
+train_indices = shuffled_indices[: -n_val - n_test]  # 训练集的索引
+val_indices = shuffled_indices[-n_val - n_test:-n_test]  # 验证集的索引
 test_indices = shuffled_indices[-n_test:]  # 验证集的索引
 Train_X = X[train_indices]
 Train_Y = Y[train_indices]
@@ -68,24 +74,26 @@ def test(X_data, Y_data, Is_plot=False):
         100. * correct / len(Y_data)))
 
 
-training_loop(
-    n_epochs=2500,
-    optimizer=optimizer,
-    model=model,
-    loss_fn=loss_f,
-    train_x=Train_X,
-    val_x=Val_X,
-    train_y=Train_Y,
-    val_y=Val_Y
-)
-out = model(X)
-pred = out.data.max(1, keepdim=True)[1]
-source_data["y"] = pd.DataFrame(np.array(Y))
-source_data["y_pre"] = pd.DataFrame(np.array(pred)[:, 0])
+# training_loop(
+#     n_epochs=2500,
+#     optimizer=optimizer,
+#     model=model,
+#     loss_fn=loss_f,
+#     train_x=Train_X,
+#     val_x=Val_X,
+#     train_y=Train_Y,
+#     val_y=Val_Y
+# )
+# out = model(X)
+# pred = out.data.max(1, keepdim=True)[1]
+# source_data["y"] = pd.DataFrame(np.array(Y))
+# source_data["y_pre"] = pd.DataFrame(np.array(pred)[:, 0])
+#
+# test(Train_X, Train_Y)
+# test(Val_X, Val_Y)
+# test(Test_X, Test_Y)
+# test(X, Y, Is_plot=True)
 
-test(Train_X, Train_Y)
-test(Val_X, Val_Y)
-test(Test_X, Test_Y)
-test(X, Y, Is_plot=True)
+
 
 print("XXX")
